@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Portal Acadêmico</title>
+    <style>
+      :root {
+        --azul: #1d4ed8;
+        --azul-escuro: #1e3a8a;
+        --cinza: #f3f4f6;
+        --texto: #111827;
+        --sucesso: #16a34a;
+        --erro: #dc2626;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        color: var(--texto);
+        background: #eef3ff;
+      }
+
+      header {
+        background: var(--azul-escuro);
+        color: white;
+        padding: 16px 24px;
+      }
+
+      nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 20px;
+        flex-wrap: wrap;
+      }
+
+      .logo {
+        font-size: 1.5rem;
+        font-weight: bold;
+      }
+
+      .menu {
+        display: flex;
+        gap: 18px;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        flex-wrap: wrap;
+      }
+
+      .menu a {
+        color: white;
+        text-decoration: none;
+        font-weight: 600;
+      }
+
+      .container {
+        max-width: 1100px;
+        margin: 32px auto;
+        padding: 0 20px;
+      }
+
+      .hero {
+        background: white;
+        border-radius: 12px;
+        padding: 28px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      }
+
+      h1 {
+        margin-top: 0;
+        font-size: 2rem;
+      }
+
+      .busca {
+        display: flex;
+        gap: 12px;
+        margin-top: 18px;
+        flex-wrap: wrap;
+      }
+
+      input[type="search"], input[type="text"], input[type="email"] {
+        padding: 12px 14px;
+        font-size: 1rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        min-width: 220px;
+        flex: 1;
+      }
+
+      button {
+        background: var(--azul);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 12px 18px;
+        font-size: 1rem;
+        cursor: pointer;
+        font-weight: bold;
+      }
+
+      button:hover {
+        background: #1e40af;
+      }
+
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 18px;
+        margin-top: 24px;
+      }
+
+      .card {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      }
+
+      .card h3 {
+        margin-top: 0;
+      }
+
+      .form-box {
+        margin-top: 28px;
+        background: white;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      }
+
+      form {
+        display: grid;
+        gap: 14px;
+        max-width: 500px;
+      }
+
+      .mensagem {
+        display: none;
+        margin-top: 16px;
+        padding: 12px 14px;
+        border-radius: 8px;
+        font-weight: 600;
+      }
+
+      .mensagem.sucesso {
+        display: block;
+        background: #dcfce7;
+        color: var(--sucesso);
+      }
+
+      .mensagem.erro {
+        display: block;
+        background: #fee2e2;
+        color: var(--erro);
+      }
+
+      .resultado {
+        margin-top: 20px;
+        background: #eff6ff;
+        border-radius: 8px;
+        padding: 14px;
+        display: none;
+      }
+
+      .resultado.visible {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <nav>
+        <div class="logo">Portal Acadêmico</div>
+        <ul class="menu">
+          <li><a href="#">Início</a></li>
+          <li><a href="#">Cursos</a></li>
+          <li><a href="#">Fale Conosco</a></li>
+          <li><a href="#">Sobre</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main class="container">
+      <section class="hero">
+        <h1>Bem-vindo ao Portal Acadêmico</h1>
+        <p>Encontre informações, cursos e novidades da instituição.</p>
+
+        <div class="busca">
+          <input id="campoBusca" type="search" placeholder="Buscar curso ou disciplina" />
+          <button id="btnBusca">Buscar</button>
+        </div>
+
+        <div id="resultadoBusca" class="resultado">
+          Resultado da busca: <strong id="textoBusca">Nenhuma pesquisa realizada.</strong>
+        </div>
+      </section>
+
+      <section class="cards">
+        <article class="card">
+          <h3>Administração</h3>
+          <p>Formação em gestão, inovação e negócios.</p>
+        </article>
+        <article class="card">
+          <h3>Informática</h3>
+          <p>Desenvolvimento, redes e infraestrutura.</p>
+        </article>
+        <article class="card">
+          <h3>Engenharia</h3>
+          <p>Projetos, tecnologia e soluções aplicadas.</p>
+        </article>
+      </section>
+
+      <section class="form-box">
+        <h2>Contato</h2>
+        <form id="formContato">
+          <input type="text" id="nome" placeholder="Nome completo" />
+          <input type="email" id="email" placeholder="E-mail" />
+          <button type="submit">Enviar mensagem</button>
+        </form>
+
+        <div id="mensagem" class="mensagem" aria-live="polite"></div>
+      </section>
+    </main>
+
+    <script>
+      document.getElementById('btnBusca').addEventListener('click', function () {
+        const texto = document.getElementById('campoBusca').value.trim();
+        const resultado = document.getElementById('resultadoBusca');
+        const textoBusca = document.getElementById('textoBusca');
+
+        if (!texto) {
+          textoBusca.textContent = 'Digite algo para pesquisar.';
+          resultado.classList.add('visible');
+          return;
+        }
+
+        textoBusca.textContent = texto;
+        resultado.classList.add('visible');
+      });
+
+      document.getElementById('formContato').addEventListener('submit', function (event) {
+        event.preventDefault();
+
+        const nome = document.getElementById('nome').value.trim();
+        const email = document.getElementById('email').value.trim();
+        const mensagem = document.getElementById('mensagem');
+
+        if (!nome || !email) {
+          mensagem.className = 'mensagem erro';
+          mensagem.textContent = 'Preencha nome e e-mail antes de enviar.';
+          return;
+        }
+
+        mensagem.className = 'mensagem sucesso';
+        mensagem.textContent = 'Mensagem enviada com sucesso!';
+        document.getElementById('formContato').reset();
+      });
+    </script>
+  </body>
+</html>

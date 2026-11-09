@@ -1,52 +1,121 @@
 const { Builder, By, until } = require('selenium-webdriver');
 const chrome = require('selenium-webdriver/chrome');
 const { expect } = require('chai');
+const fs = require('fs');
+const path = require('path');
 
-(async function testeInterface() {
-  // Configurações para modo headless funcional em containers
+const SITE_URL = 'http://localhost:8000';
+const ARTIFACTS_DIR = path.join(__dirname, 'artifacts');
+
+function ensureArtifactsDir() {
+  fs.mkdirSync(ARTIFACTS_DIR, { recursive: true });
+}
+
+function appendLog(testName, status, detail) {
+  const timestamp = new Date().toISOString();
+  fs.appendFileSync(
+    path.join(ARTIFACTS_DIR, 'testes.log'),
+    `${timestamp} | ${testName} | ${status} | ${detail}\n`
+  );
+}
+
+async function saveScreenshot(driver, label, status) {
+  const screenshot = await driver.takeScreenshot();
+  const fileName = `${label}-${status}.png`;
+  fs.writeFileSync(path.join(ARTIFACTS_DIR, fileName), screenshot, 'base64');
+}
+
+function buildDriver() {
   const options = new chrome.Options();
-  options.addArguments('--headless'); // executa sem janela gráfica
+  options.addArguments('--headless=new');
   options.addArguments('--no-sandbox');
   options.addArguments('--disable-dev-shm-usage');
   options.addArguments('--window-size=1920,1080');
-  // cria diretório temporário único a cada execução
   options.addArguments(`--user-data-dir=/tmp/chrome-${Date.now()}`);
 
-  let driver = await new Builder()
+  return new Builder()
     .forBrowser('chrome')
     .setChromeOptions(options)
     .build();
+}
+
+async function runTest(testName, testFn) {
+  ensureArtifactsDir();
+  let driver;
 
   try {
-    console.log('Abrindo site...');
-    await driver.get('https://fatec.sp.gov.br/');
+    driver = buildDriver();
+    await driver.get(SITE_URL);
+    await saveScreenshot(driver, testName, 'inicio');
 
-    // Verificar título da página
+    await testFn(driver);
+
+    await saveScreenshot(driver, testName, 'ok');
+    appendLog(testName, 'OK', 'Teste executado com sucesso');
+    console.log(`OK: ${testName}`);
+  } catch (error) {
+    if (driver) {
+      try {
+        await saveScreenshot(driver, testName, 'erro');
+      } catch (screenshotErr) {
+        console.error('Falha ao capturar screenshot:', screenshotErr);
+      }
+    }
+
+    appendLog(testName, 'ERRO', error.message);
+    console.error(`ERRO: ${testName}`);
+    console.error(error.message);
+  } finally {
+    if (driver) {
+      await driver.quit();
+    }
+  }
+}
+
+(async function testeInterfaceLocal() {
+  console.log('Abrindo site local...');
+
+  await runTest('visibilidade_status', async function (driver) {
     const titulo = await driver.getTitle();
     console.log('Título:', titulo);
-    expect(titulo).to.include('Fatec');
+    expect(titulo).to.include('Portal Acadêmico');
 
-    // Verificar visibilidade do menu
-    const menu = await driver.findElement(By.css('nav'));
-    const visivel = await menu.isDisplayed();
+    const campoBusca = await driver.findElement(By.id('campoBusca'));
+    await campoBusca.sendKeys('Administração');
+
+    const botaoBusca = await driver.findElement(By.id('btnBusca'));
+    await botaoBusca.click();
+
+    await driver.wait(until.elementLocated(By.id('resultadoBusca')), 5000);
+    const textoBusca = await driver.findElement(By.id('textoBusca')).getText();
+    console.log('Resultado da busca:', textoBusca);
+    expect(textoBusca).to.include('Administração');
+  });
+
+  await runTest('prevencao_erros', async function (driver) {
+    const form = await driver.findElement(By.id('formContato'));
+    await form.submit();
+
+    const mensagem = await driver.wait(until.elementLocated(By.id('mensagem')), 5000);
+    const textoMensagem = await mensagem.getText();
+    console.log('Mensagem:', textoMensagem);
+    expect(textoMensagem).to.include('Preencha nome e e-mail');
+  });
+
+  await runTest('consistencia_padroes', async function (driver) {
+    const nav = await driver.findElement(By.css('nav'));
+    const visivel = await nav.isDisplayed();
     console.log('Menu visível?', visivel);
     expect(visivel).to.be.true;
 
-    // Testar campo de busca
-    const campoBusca = await driver.findElement(By.css('input[type="search"], input[name*="busca"]'));
-    await campoBusca.sendKeys('cursos\n');
-    await driver.wait(until.urlContains('curso'), 5000);
-    console.log('Redirecionamento OK');
+    const links = await driver.findElements(By.css('.menu a'));
+    console.log('Quantidade de links do menu:', links.length);
+    expect(links.length).to.be.greaterThan(3);
 
-    // Captura de tela (opcional)
-    const screenshot = await driver.takeScreenshot();
-    const fs = require('fs');
-    fs.writeFileSync('resultado_teste.png', screenshot, 'base64');
-    console.log('Screenshot salvo como resultado_teste.png');
+    const botoes = await driver.findElements(By.css('button'));
+    console.log('Quantidade de botões:', botoes.length);
+    expect(botoes.length).to.be.greaterThan(1);
+  });
 
-  } catch (err) {
-    console.error('Erro no teste:', err);
-  } finally {
-    await driver.quit();
-  }
+  console.log('Arquivos salvos em:', ARTIFACTS_DIR);
 })();
